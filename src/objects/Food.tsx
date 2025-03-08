@@ -31,9 +31,12 @@ export class Food {
 
       if (timer.current > 5000 && foods.length < MAX_FOODS) {
         setFoods((foods) => {
+          const x = Math.random() * app.screen.width
+          const y = Math.random() * app.screen.height
+
           const newFood = {
-            x: Math.random() * app.screen.width,
-            y: Math.random() * app.screen.height,
+            x: x - (x % 20),
+            y: y - (y % 20)
           }
 
           return [

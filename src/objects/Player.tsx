@@ -5,31 +5,54 @@ import { useEffect, useRef, useState } from "react";
 export class Player {
   private spriteRef = useRef<Sprite>(null);
   private keys = useRef<{ [key: string]: boolean }>({})
-  private speed = useRef(2)
+  private speed = useRef(20)
+  private timer = useRef(0)
 
-  public playerInput = (ticker: Ticker) => {
+  public playerInput = () => {
     if (!this.spriteRef.current) return;
 
-    if (this.keys.current["r"])
-      this.spriteRef.current.rotation += 0.1 * ticker.deltaTime;
-
-    if (this.keys.current["u"])
-      this.speed.current += 0.5
-    if (this.keys.current["d"])
-      this.speed.current -= 0.5
+    const UP = 1,
+      RIGHT = 2,
+      DOWN = 3,
+      LEFT = 4
 
     if (this.keys.current["h"])
-      this.spriteRef.current.x -= this.speed.current * ticker.deltaTime;
+      return LEFT
     if (this.keys.current["j"])
-      this.spriteRef.current.y += this.speed.current * ticker.deltaTime;
+      return DOWN
     if (this.keys.current["k"])
-      this.spriteRef.current.y -= this.speed.current * ticker.deltaTime;
+      return UP
     if (this.keys.current["l"])
-      this.spriteRef.current.x += this.speed.current * ticker.deltaTime;
+      return RIGHT
+  }
+
+  public move = (direc: number, ticker: Ticker) => {
+    if (!this.spriteRef.current) return;
+
+    const UP = 1,
+      RIGHT = 2,
+      DOWN = 3,
+      LEFT = 4
+
+    this.timer.current += ticker.deltaMS
+
+    if (this.timer.current > 200) {
+      if (direc == UP)
+        this.spriteRef.current.y -= this.speed.current * Math.round(ticker.deltaTime);
+      else if (direc == RIGHT)
+        this.spriteRef.current.x += this.speed.current * Math.round(ticker.deltaTime);
+      else if (direc == DOWN)
+        this.spriteRef.current.y += this.speed.current * Math.round(ticker.deltaTime);
+      else if (direc == LEFT)
+        this.spriteRef.current.x -= this.speed.current * Math.round(ticker.deltaTime);
+
+      this.timer.current = 0
+    }
   }
 
   public PlayerSprite = () => {
     const { app } = useApplication()
+    const [direc, setDirec] = useState(0)
 
     const [texture, setTexture] = useState(Texture.EMPTY);
 
@@ -52,7 +75,19 @@ export class Player {
     }, [])
 
     useTick((ticker) => {
-      this.playerInput(ticker)
+      const aux = this.playerInput(ticker)
+      setDirec(prev => {
+        const UP = 1,
+          RIGHT = 2,
+          DOWN = 3,
+          LEFT = 4
+
+        if (!aux || (prev == UP && aux == DOWN) || (prev == DOWN && aux == UP) || (prev == LEFT && aux == RIGHT) || (prev == RIGHT && aux == LEFT))
+          return prev
+
+        return aux
+      })
+      this.move(direc, ticker)
     })
 
     return (
@@ -60,8 +95,8 @@ export class Player {
         ref={this.spriteRef}
         texture={texture}
         anchor={0.5}
-        x={app.screen.width / 2}
-        y={app.screen.height / 2}
+        x={40}
+        y={40}
       />
     );
   }
